@@ -1,1 +1,28 @@
-Assert.assertEquals(actual_msg,expected_msg,"Error message is not per requirement");
+public void test_cart() throws Exception
+	{
+		String expected_msg = "* The maximum quantity allowed for purchase is 500.";
+		String expected_cart_msg = "SHOPPING CART IS EMPTY";
+		
+		driver.navigate().to(appURL);
+		
+		WebElement mob = getWebElement(Locators.xpath, "//a[text()='Mobile']");
+		mob.click();
+		WebElement cart_btn = getWebElement(Locators.xpath, "//a[@title='Xperia']//following::button[@title='Add to Cart']");
+		cart_btn.click();
+		WebElement qty_box = getWebElement(Locators.xpath, "//input[@title='Qty']");
+		qty_box.clear();
+		type(qty_box,"1000");
+		WebElement updt_btn = getWebElement(Locators.xpath , "//button[@name='update_cart_action' and @title='Update']");
+		updt_btn.click();
+		WebElement msg_txt = getWebElement(Locators.xpath, "//p[@class='item-msg error']");
+		String actual_msg = msg_txt.getText().trim();
+		
+		Assert.assertEquals(actual_msg,expected_msg,"Error message is not per requirement");
+		
+		WebElement empty_cart = getWebElement(Locators.xpath, "//span[text()='Empty Cart']");
+		empty_cart.click();
+		WebElement empty_cart_msg = getWebElement(Locators.xpath, "//h1[text()='Shopping Cart is Empty']");
+		String actual_cart_msg = empty_cart_msg.getText();
+		Assert.assertEquals(actual_cart_msg,expected_cart_msg,"Error message is not matching requirement");
+		
+	}
