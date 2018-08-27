@@ -1,0 +1,285 @@
+webdrivebase.java
+
+package MyTest;
+
+import static org.testng.Assert.assertTrue;
+
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
+
+import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.ie.InternetExplorerDriver;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.remote.DesiredCapabilities;
+
+public class WebdriverBase {
+ 
+	//what browsers are we interested in implementing
+			public enum Browsers		{ Firefox, Chrome, InternetExplorer, Android, Ipad, Iphone, Opera, Safari };
+			//what locator actions are available in webdriver
+			public enum Locators		{ xpath, id, name, classname, paritallinktext, linktext, tagname };
+			
+			public static String appURL;
+			public static Browsers browser;
+
+			//this is our driver that will be used for all selenium actions
+			private WebDriver	driver;
+			//our constructor, determining which browser to start with
+			public WebdriverBase( ) throws Exception {
+				init_properties();
+				switch ( browser ) {		//check our browser
+					case Firefox:		{ driver = new FirefoxDriver(); 		break; }
+					case Chrome:		{ System.setProperty("webdriver.chrome.driver","src/test/resources/dependencies/chromedriver.exe");
+					 Capabilities capabilities = DesiredCapabilities.chrome();
+						driver =  new ChromeDriver(capabilities);
+						System.out.println("Driver used is: " +"  driver JK: "+driver);  		break; }
+					case InternetExplorer:	{ driver = new InternetExplorerDriver();  	break; }
+					/*case Android:		{ driver = new AndroidDriver(); 		break; }
+					case Iphone:		{ driver = new IPhoneDriver();  		break; }
+					case Safari:		{ driver = new SafariDriver();  		break; }*/
+					//if our browser is not listed, throw an error
+					default:		{ throw new Exception();	}
+				}
+				//open a new driver instance to our application URL
+				driver.get( appURL );
+				driver.manage().window().maximize();
+			}
+
+			public void init_properties() throws Exception
+			{
+				
+				Properties prop = new Properties();
+				FileInputStream input = null;
+				
+				try {
+
+					input = new FileInputStream("C:\\Users\\vn500ny\\AppData\\Local\\Temp\\testng-eclipse--1799760452\\config.properties");
+
+					// load a properties file
+					prop.load(input);
+
+					// get the property value and print it out
+					String Web_browser = prop.getProperty("browser").replace("\"", "");
+					appURL = prop.getProperty("appURL").replace("\"", "");
+										
+					switch(Web_browser)
+					{
+					case "Chrome" : {browser = Browsers.Chrome; break;}
+					case "Firefox": {browser = Browsers.Firefox; break;}
+				    default:		{ throw new Exception();	}
+					}
+				} catch (IOException ex) {
+					ex.printStackTrace();
+				}
+			}
+			//a method to allow retrieving our driver instance
+			public WebDriver getDriver() {
+				return driver;
+			}
+
+			/////////////////////////////////////////
+			//waiting functionality
+			/////////////////////////////////////////
+
+			public void loadApplicationURL(){
+				//open a new driver instance to our application URL
+				driver.get( appURL );
+			}
+			
+			//a method for allowing selenium to pause for a set amount of time
+			public void wait( int seconds ) throws InterruptedException {
+				Thread.sleep( seconds*1000 );
+			}
+			public void wait( double seconds ) throws InterruptedException {
+				Thread.sleep( Double.doubleToLongBits( seconds*1000 ) );
+			}
+
+			//a method for waiting until an element is displayed
+			public void waitForElementDisplayed( Locators locator, String element ) throws Exception {
+				waitForElementDisplayed( getWebElement( locator, element ), 5 );
+			}
+			public void waitForElementDisplayed( Locators locator, String element, int seconds  ) throws Exception {
+				waitForElementDisplayed( getWebElement( locator, element ), seconds );
+			}
+			public void waitForElementDisplayed( WebElement element ) throws Exception {
+				waitForElementDisplayed( element, 5 );
+			}
+			public void waitForElementDisplayed( WebElement element, int seconds ) throws Exception {
+				//wait for up to XX seconds for our error message
+				long end = System.currentTimeMillis() + ( seconds * 1000 );
+				while (System.currentTimeMillis() < end) {
+					// If results have been returned, the results are displayed in a drop down.
+					if ( element.isDisplayed() ) {
+						break;
+					}
+				}
+			}
+
+			//////////////////////////////////////
+			//checking element functionality
+			//////////////////////////////////////
+
+			//a method for checking id an element is displayed
+			public void checkElementDisplayed( Locators locator, String element ) throws Exception {
+				checkElementDisplayed( getWebElement( locator, element ) );
+			}
+			public void checkElementDisplayed( WebElement element ) throws Exception {
+				assertTrue( element.isDisplayed() );
+			}
+
+			/////////////////////////////////////
+			//selenium actions functionality
+			/////////////////////////////////////
+
+			//our generic selenium click functionality implemented
+			public void click( Locators locator, String element ) throws Exception {
+				click( getWebElement( locator, element ) );
+			}
+			public void click( WebElement element ) {
+				Actions selAction = new Actions(driver);
+				selAction.click( element ).perform();
+			}
+
+			//a method to simulate the mouse hovering over an element
+			public void hover( Locators locator, String element ) throws Exception {
+				hover( getWebElement( locator, element ) );
+			}
+			public void hover( WebElement element ) throws Exception {
+				Actions selAction = new Actions(driver);
+				selAction.moveToElement( element ).perform();
+			}
+
+			//our generic selenium type functionality
+			public void type( Locators locator, String element, String text ) throws Exception {
+				type( getWebElement( locator, element ), text );
+			}
+			public void type( WebElement element, String text ) {
+				Actions selAction = new Actions(driver);
+				selAction.sendKeys( element, text ).perform();
+			}
+
+			////////////////////////////////////
+			//extra base selenium functionality
+			////////////////////////////////////
+
+			//a method to grab the web element using selenium webdriver
+			public WebElement getWebElement( Locators locator, String element ) throws Exception {
+				By byElement;
+				switch ( locator ) {		//determine which locator item we are interested in
+					case xpath:		{ byElement = By.xpath(element); 		break; }
+					case id:		{ byElement = By.id(element); 			break; }
+					case name:		{ byElement = By.name(element); 		break; }
+					case classname:		{ byElement = By.className(element); 		break; }
+					case linktext:		{ byElement = By.linkText(element); 		break; }
+					case paritallinktext:	{ byElement = By.partialLinkText(element); 	break; }
+					case tagname:		{ byElement = By.tagName(element); 		break; }
+					default:		{ throw new Exception(); }
+				}
+				WebElement query = driver.findElement( byElement );	//grab our element based on the locator
+				return query;	//return our query
+			}
+
+			//a method to obtain screenshots
+			public void takeScreenshot(String action) throws IOException {
+				//make our screenshot name friendly
+				action = action.replaceAll("[^a-zA-Z0-9]", "");  
+
+				//take a screenshot
+				File scrFile = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
+				// Now you can do whatever you need to do with it, for example copy somewhere
+				FileUtils.copyFile(scrFile, new File("target/" + System.currentTimeMillis() + action + ".png"));    	
+			}
+}
+
+
+newtest.java
+
+
+package MyTest;
+
+import java.io.IOException;
+
+import org.junit.BeforeClass;
+import org.testng.ITestResult;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.Test;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.AfterTest;
+
+public class NewTest {
+	
+  public NewTest() throws Exception {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+WebPageBase Homepage;
+  
+   @BeforeTest
+  public void beforeTest() throws Exception {
+	  Homepage = new WebPageBase();
+	  }
+  @Test
+  public void Homepage_test() throws Exception {
+	  //Day#1
+	 // Homepage.test_title();
+	 // Homepage.test_mobile_link();
+	  //Homepage.test_sort();
+	  //Day#2
+	  //Homepage.test_price();
+	  
+  }
+  @Test
+  public void Pricepage_test() throws Exception
+  {
+	//Day#3
+	// Homepage.test_cart();
+  }
+  
+  @Test
+  public void ComparePage_test() throws Exception
+  {
+	//Day#4
+	//  Homepage.test_compare();
+  }
+  
+  @Test
+  public void Account_test() throws Exception
+  {
+	  //Day#5
+	  //Homepage.register_account();
+	  Homepage.share_wishlist();
+	  
+  }
+  
+  
+  
+  @AfterMethod
+  public void record_failure(ITestResult result) throws InterruptedException
+  {
+	  if (result.getStatus() == ITestResult.FAILURE)
+	  {
+		  //System.out.println(result.getTestName().toString());
+          System.out.println("TITLE test failed...getting screenshot");
+	  }
+	  Thread.sleep(2000);
+  }
+  
+  @AfterTest
+  public void afterTest() throws IOException, InterruptedException {
+	  Thread.sleep(2000);
+	  Homepage.quit();
+  }
+
+}
